@@ -1,0 +1,107 @@
+name: Release Binary
+#check
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: amd64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: macos-latest
+            platform: macos
+            arch: amd64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+          - os: windows-latest
+            platform: windows
+            arch: amd64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install textual pydantic python-dotenv google-generativeai openai anthropic
+
+      - name: Build binary (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          pyinstaller --onefile --name pylogs \
+            --add-data "pylogs_hook.py:." \
+            app/cli.py
+
+      - name: Build binary (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          pyinstaller --onefile --name pylogs `
+            --add-data "pylogs_hook.py;." `
+            app/cli.py
+        shell: pwsh
+
+      - name: Rename binary (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          mv dist/pylogs "dist/pylogs-${{ matrix.platform }}-${{ matrix.arch }}"
+
+      - name: Rename binary (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          Move-Item -Path "dist\pylogs.exe" -Destination "dist\pylogs-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+        shell: pwsh
+
+      - name: Upload to Private Repo Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/pylogs-*
+
+      - name: Upload hook to Private Repo Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pylogs_hook.py
+          tag_name: ${{ github.ref_name }}
+
+  publish-public:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts from private release
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          REPO="RjyavardhanSingh/Pylogs"
+          PUBLIC_REPO="RjyavardhanSingh/pylogs-releases"
+
+          # Create release on public repo (idempotent)
+          gh release list --repo "$PUBLIC_REPO" --json tagName -q ".[].tagName" | grep -q "^${TAG}$" || \
+            gh release create "$TAG" "$PUBLIC_REPO" --title "$TAG" --notes "Binary release $TAG"
+
+          # Download all binaries from private release
+          gh release download "$TAG" --repo "$REPO" --pattern "pylogs-*" --dir ./binaries
+          gh release download "$TAG" --repo "$REPO" --pattern "pylogs_hook.py" --dir ./binaries
+
+          # Upload to public release
+          gh release upload "$TAG" ./binaries/pylogs-* --repo "$PUBLIC_REPO" --clobber
+        shell: bash
