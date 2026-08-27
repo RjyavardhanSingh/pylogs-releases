@@ -14,3 +14,5 @@
 
 ```bash
 curl -fsSL [https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh](https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh) | bash
+```
+![Download Count](https://img.shields.io/github/downloads/RjyavardhanSingh/pylogs-releases/total)
