@@ -12,7 +12,21 @@
 
 ## Install
 
+## Install
+
+### Linux / macOS
+
 ```bash
-curl -fsSL [https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh](https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh) | bash
+curl -fsSL https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh | bash
+```
+
+### Windows (PowerShell)
+```bash
+irm https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh | bash
+```
+
+### Windows (Git Bash / WSL)
+```bash
+curl -fsSL https://raw.githubusercontent.com/RjyavardhanSingh/pylogs-releases/main/install.sh | bash
 ```
 ![Download Count](https://img.shields.io/github/downloads/RjyavardhanSingh/pylogs-releases/total)
