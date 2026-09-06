@@ -12,8 +12,6 @@
 
 ## Install
 
-## Install
-
 ### Linux / macOS
 
 ```bash
